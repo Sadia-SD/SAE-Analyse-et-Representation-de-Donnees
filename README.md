@@ -24,3 +24,5 @@ python main.py
 
 ## Configuration
 See web/sae_3gpp_web/sae_3gpp_web/settings.py for configuration
+## Acceder à l'interface graphique en ligne
+http://80.247.7.58:8000/tdoc/
