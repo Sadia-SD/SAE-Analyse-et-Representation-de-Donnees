@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        /* Center the loader */
+        .loading-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f8f9fa;
+            flex-direction: column;
+        }
+
+        /* Loading Bar */
+        .loading-bar {
+            width: 50%;
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated Effect */
+        .loading-bar::before {
+            content: "";
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #00c6ff);
+            position: absolute;
+            animation: loading-animation 2s infinite;
+        }
+
+        /* Animation */
+        @keyframes loading-animation {
+            0% { width: 0%; }
+            25% { width: 50%; }
+            50% { width: 85%; }
+        }
+    </style>
+        
+    <div class="container mt-5">
+        <h2>Dashboard</h2>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="row">
+                    <div class="card bg-primary text-white p-3">
+                        <h4>Number of meetings documents</h4>
+                        <p>{{ nb_total }}</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="card bg-success text-white p-3">
+                        <h4>Number of treated documents</h4>
+                        <p>{{ nb_treated }}</p>
+                        <button class="warning" {% if has_tasks %}disabled{% endif %} onclick="get('/tdoc/start')">Start treatment</button>
+                        <button class="warning" {% if not has_tasks %}disabled{% endif %} onclick="get('/tdoc/stop')">Stop treatment</button>
+                        {% if has_tasks %}Task in progress ...  <div class="loading-bar"></div>{% endif %}
+                    </div>
+                </div>
+            </div>
+            <br>
+            <div class="col-md-2"></div>
+
+            <div class="col-md-6">
+                <div id="pie-chart" style="width: 600px; height: 400px;"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div id="meetingChart" style="height: 600px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function get(url) {
+            fetch(url, { method: 'GET' })
+                .then(response => response.text())
+                .then(data => alert(data))
+                .catch(error => console.error("Error:", error));
+                setTimeout(() => {
+                    location.reload();
+                }, 5000);
+           
+            
+        }
+    </script>
+
+    <script>
+        // Get data from Django context
+        var labels = {{ labels|safe }};
+        var data = {{ data|safe }};
+        function getRandomColor() {
+        return 'rgb(' + 
+            Math.floor(Math.random() * 256) + ',' + 
+            Math.floor(Math.random() * 256) + ',' + 
+            Math.floor(Math.random() * 256) + ')';
+    }
+
+    // Create an array of random colors for each bar
+    var colors = labels.map(() => getRandomColor());
+
+        // Plotly bar chart setup
+        var trace = {
+            x: labels,  // X-axis is the meeting names
+            y: data,  // Y-axis is the number of documents
+            type: 'bar',  // Bar chart type
+            marker: {
+                color: colors // Blue color
+            }
+        };
+
+        var layout = {
+            title: 'Number of Documents per Meeting',
+            yaxis: {
+                title: 'Number of Documents',
+                rangemode: 'tozero'  // Start Y-axis at zero
+            }
+        };
+
+        // Plot the chart
+        Plotly.newPlot('meetingChart', [trace], layout);
+    </script>
+    <script>
+        var data = [{
+            values: [{{nb_treated}}, {{nb_untreated}}],  // Treated and Untreated Docs
+            labels: ['Treated Docs', 'Untreated Docs'],
+            type: 'pie',
+            hole: 0.4,  // Makes it a donut chart
+        }];
+
+        var layout = {
+            title: 'Documents Status',
+            showlegend: true,
+        };
+
+        Plotly.newPlot('pie-chart', data, layout);
+    </script>
+{% endblock %}
